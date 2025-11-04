@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEIF Score Calculator</title>
+    <style>
+        :root {
+            --primary-color: #005A9C;
+            --secondary-color: #f4f4f4;
+            --text-color: #333;
+            --low-risk-bg: #e8f5e9;
+            --low-risk-text: #2e7d32;
+            --high-risk-bg: #ffebee;
+            --high-risk-text: #c62828;
+            --at-risk-bg: #fffbe6;
+            --border-color: #ddd;
+            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 2em;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            color: #555;
+            max-width: 600px;
+            margin: 10px auto 0;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .calculator-section, .tdm-section, .footer {
+            margin-bottom: 30px;
+        }
+        
+        .instructions {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            flex-grow: 1;
+            height: 8px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+            border-radius: 5px;
+        }
+
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--primary-color);
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        
+        .slider-value {
+            font-weight: bold;
+            background-color: var(--secondary-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .calculate-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .calculate-btn:hover {
+            background-color: #004a80;
+        }
+
+        #results-section {
+            display: none;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        
+        .results-summary {
+            text-align: center;
+        }
+
+        .risk-probability {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .risk-banner {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .risk-banner.low-risk {
+            background-color: var(--low-risk-bg);
+            color: var(--low-risk-text);
+        }
+        
+        .risk-banner.high-risk {
+            background-color: var(--high-risk-bg);
+            color: var(--high-risk-text);
+        }
+        
+        .risk-interpretation {
+            font-size: 1em;
+            color: #555;
+        }
+        
+        #performance-metrics {
+            margin-top: 25px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        
+        #performance-metrics h4 {
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #444;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            text-align: center;
+        }
+        
+        .metric-card {
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: 5px;
+            position: relative; /* Needed for tooltip positioning */
+        }
+        
+        .metric-card .label {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #666;
+            border-bottom: 1px dotted #666;
+            cursor: help;
+            display: inline-block;
+        }
+        
+        .metric-card .label::after {
+            content: ' (?)';
+            font-size: 0.8em;
+        }
+        
+        .metric-card .value {
+            display: block;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-top: 5px;
+        }
+
+        /* Tooltip CSS */
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 10px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            line-height: 1.4;
+            width: 220px;
+            z-index: 10;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .metric-card:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tdm-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .tdm-quadrant {
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Quadrant specific background colors */
+        .tdm-quadrant:nth-child(1), .tdm-quadrant:nth-child(2) {
+            background-color: var(--high-risk-bg);
+        }
+        .tdm-quadrant:nth-child(3) {
+            background-color: var(--at-risk-bg);
+        }
+        .tdm-quadrant:nth-child(4) {
+            background-color: var(--low-risk-bg);
+        }
+
+        .tdm-quadrant h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        
+        .tdm-quadrant strong {
+            display: block;
+            margin-top: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: #888;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .header h1 {
+                font-size: 1.5em;
+            }
+            .tdm-grid {
+                grid-template-columns: 1fr;
+            }
+            .tooltip {
+                width: 180px; /* Adjust tooltip width for smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="header">
+            <h1>LEIF Score Calculator</h1>
+            <p>A tool to predict the Likelihood of Early Infliximab Failure (LEIF) in patients with steroid-refractory acute Ulcerative Colitis (UC).</p>
+        </header>
+
+        <!-- Calculator Section -->
+        <section class="calculator-section">
+            <h2>Calculate Patient's Risk</h2>
+            <p class="instructions">Use the sliders to input values at Day 0 (time of first infliximab infusion) and Day 2 (48 hours post-infusion).</p>
+
+            <div class="input-group">
+                <label for="d2-stool">Day 2 Stool Frequency</label>
+                <div class="slider-container">
+                    <input type="range" id="d2-stool" min="0" max="30" value="8" step="1">
+                    <span id="d2-stool-value" class="slider-value">8</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="d0-crp">Day 0 CRP (mg/L)</label>
+                <div class="slider-container">
+                    <input type="range" id="d0-crp" min="1" max="400" value="67" step="1">
+                    <span id="d0-crp-value" class="slider-value">67</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="d2-crp">Day 2 CRP (mg/L)</label>
+                <div class="slider-container">
+                    <input type="range" id="d2-crp" min="1" max="400" value="43" step="1">
+                    <span id="d2-crp-value" class="slider-value">43</span>
+                </div>
+            </div>
+
+            <button id="calculate-btn" class="calculate-btn">Calculate LEIF Score</button>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section">
+            <div class="results-summary">
+                <h2>Risk Assessment</h2>
+                <div id="risk-banner" class="risk-banner"></div>
+                <p class="risk-probability" id="risk-probability"></p>
+                <p class="risk-interpretation" id="risk-interpretation"></p>
+            </div>
+            <div id="performance-metrics">
+                <h4 id="metrics-title"></h4>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span class="label">Sensitivity</span>
+                        <span class="value" id="metric-sensitivity"></span>
+                        <span class="tooltip">Of all patients who will actually fail therapy, this is the percentage the test correctly identifies as 'High Risk' at this threshold.</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">Specificity</span>
+                        <span class="value" id="metric-specificity"></span>
+                        <span class="tooltip">Of all patients who will actually respond to therapy, this is the percentage the test correctly identifies as 'Low Risk' at this threshold.</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">PPV</span>
+                        <span class="value" id="metric-ppv"></span>
+                        <span class="tooltip">If a patient's result is 'High Risk' at this threshold, this is the probability that they will actually fail therapy.</span>
+                    </div>
+                    <div class="metric-card">
+                        <span class="label">NPV</span>
+                        <span class="value" id="metric-npv"></span>
+                        <span class="tooltip">If a patient's result is 'Low Risk' at this threshold, this is the probability that they will actually respond to therapy.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TDM Framework Section -->
+        <section class="tdm-section">
+            <h2>Clinical Context: Integrating LEIF Score with TDM</h2>
+            <p>A high LEIF score should not automatically trigger cessation of infliximab. It serves as a flag for early reassessment. Integrating the score with point-of-care (POC) infliximab drug levels can help differentiate the mechanism of failure and guide subsequent therapy, as proposed below.</p>
+            <div class="tdm-grid">
+                <div class="tdm-quadrant">
+                    <h3>Quadrant 1: PK Failure</h3>
+                    <p><strong>High Risk + Subtherapeutic IFX Level</strong></p>
+                    <p>Patient is not responding due to insufficient drug exposure from high clearance.
+                    <strong>Action:</strong> Consider accelerated AND intensified infliximab dosing (e.g., 10 mg/kg).</p>
+                </div>
+                <div class="tdm-quadrant">
+                    <h3>Quadrant 2: PD Failure</h3>
+                    <p><strong>High Risk + Therapeutic IFX Level</strong></p>
+                    <p>Patient is not responding despite adequate drug levels, suggesting TNF-independent inflammation.
+                    <strong>Action:</strong> Strongest rationale for an early switch to an alternative MOA (e.g., JAK inhibitor) or timely surgical consultation.</p>
+                </div>
+                <div class="tdm-quadrant">
+                    <h3>Quadrant 4: The At-Risk Responder</h3>
+                     <p><strong>Low Risk + Subtherapeutic IFX Level</strong></p>
+                    <p>Patient is improving, but low drug levels may threaten the durability of the response.
+                    <strong>Action:</strong> Continue IFX but proactively plan for dose optimisation to maintain therapeutic targets.</p>
+                </div>
+                <div class="tdm-quadrant">
+                    <h3>Quadrant 3: The True Responder</h3>
+                     <p><strong>Low Risk + Therapeutic IFX Level</strong></p>
+                    <p>Clinical improvement is aligned with sufficient drug exposure, indicating an effective response.
+                    <strong>Action:</strong> Continue with the standard infliximab protocol with high confidence.</p>
+                </div>
+            </div>
+        </section>
+        
+        <footer class="footer">
+            <p><strong>Disclaimer:</strong> This tool is for educational purposes for healthcare professionals and is not a substitute for clinical judgment.</p>
+            <p><strong>Reference:</strong> Based on the LEIF score manuscript: "A Novel Day 2 Predictive Model for Infliximab Failure in Acute Ulcerative Colitis".</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- Data for Performance Metrics ---
+        const performanceData = [
+            { threshold: 0.050, sensitivity: 1.00, specificity: 0.022, ppv: 0.158, npv: 1.000 }, { threshold: 0.075, sensitivity: 1.00, specificity: 0.103, ppv: 0.170, npv: 1.000 },
+            { threshold: 0.100, sensitivity: 1.00, specificity: 0.235, ppv: 0.194, npv: 1.000 }, { threshold: 0.125, sensitivity: 1.00, specificity: 0.324, ppv: 0.214, npv: 1.000 },
+            { threshold: 0.150, sensitivity: 0.96, specificity: 0.397, ppv: 0.226, npv: 0.982 }, { threshold: 0.175, sensitivity: 0.92, specificity: 0.419, ppv: 0.225, npv: 0.966 },
+            { threshold: 0.200, sensitivity: 0.92, specificity: 0.449, ppv: 0.235, npv: 0.968 }, { threshold: 0.225, sensitivity: 0.92, specificity: 0.463, ppv: 0.240, npv: 0.969 },
+            { threshold: 0.250, sensitivity: 0.92, specificity: 0.485, ppv: 0.247, npv: 0.971 }, { threshold: 0.275, sensitivity: 0.92, specificity: 0.574, ppv: 0.284, npv: 0.975 },
+            { threshold: 0.300, sensitivity: 0.92, specificity: 0.596, ppv: 0.295, npv: 0.976 }, { threshold: 0.325, sensitivity: 0.92, specificity: 0.632, ppv: 0.315, npv: 0.977 },
+            { threshold: 0.350, sensitivity: 0.88, specificity: 0.669, ppv: 0.328, npv: 0.968 }, { threshold: 0.375, sensitivity: 0.88, specificity: 0.706, ppv: 0.355, npv: 0.970 },
+            { threshold: 0.400, sensitivity: 0.88, specificity: 0.743, ppv: 0.386, npv: 0.971 }, { threshold: 0.425, sensitivity: 0.88, specificity: 0.787, ppv: 0.431, npv: 0.973 },
+            { threshold: 0.450, sensitivity: 0.88, specificity: 0.801, ppv: 0.449, npv: 0.973 }, { threshold: 0.475, sensitivity: 0.88, specificity: 0.809, ppv: 0.458, npv: 0.973 },
+            { threshold: 0.500, sensitivity: 0.80, specificity: 0.816, ppv: 0.444, npv: 0.957 }, { threshold: 0.525, sensitivity: 0.80, specificity: 0.824, ppv: 0.455, npv: 0.957 },
+            { threshold: 0.550, sensitivity: 0.76, specificity: 0.846, ppv: 0.475, npv: 0.950 }, { threshold: 0.575, sensitivity: 0.68, specificity: 0.860, ppv: 0.472, npv: 0.936 },
+            { threshold: 0.600, sensitivity: 0.68, specificity: 0.875, ppv: 0.500, npv: 0.937 }, { threshold: 0.625, sensitivity: 0.68, specificity: 0.890, ppv: 0.531, npv: 0.938 },
+            { threshold: 0.650, sensitivity: 0.68, specificity: 0.912, ppv: 0.586, npv: 0.939 }, { threshold: 0.675, sensitivity: 0.64, specificity: 0.919, ppv: 0.593, npv: 0.933 },
+            { threshold: 0.700, sensitivity: 0.60, specificity: 0.919, ppv: 0.577, npv: 0.926 }, { threshold: 0.725, sensitivity: 0.56, specificity: 0.926, ppv: 0.583, npv: 0.920 },
+            { threshold: 0.750, sensitivity: 0.56, specificity: 0.926, ppv: 0.583, npv: 0.920 }, { threshold: 0.775, sensitivity: 0.44, specificity: 0.926, ppv: 0.524, npv: 0.900 },
+            { threshold: 0.800, sensitivity: 0.40, specificity: 0.934, ppv: 0.526, npv: 0.894 }, { threshold: 0.825, sensitivity: 0.36, specificity: 0.949, ppv: 0.562, npv: 0.890 },
+            { threshold: 0.850, sensitivity: 0.28, specificity: 0.956, ppv: 0.538, npv: 0.878 }, { threshold: 0.875, sensitivity: 0.20, specificity: 0.971, ppv: 0.556, npv: 0.868 },
+            { threshold: 0.900, sensitivity: 0.20, specificity: 0.978, ppv: 0.625, npv: 0.869 }, { threshold: 0.925, sensitivity: 0.20, specificity: 0.985, ppv: 0.714, npv: 0.870 },
+            { threshold: 0.950, sensitivity: 0.16, specificity: 0.993, ppv: 0.800, npv: 0.865 }
+        ];
+
+        // --- DOM Elements ---
+        const d2StoolSlider = document.getElementById('d2-stool');
+        const d0CRPSlider = document.getElementById('d0-crp');
+        const d2CRPSlider = document.getElementById('d2-crp');
+        const d2StoolValue = document.getElementById('d2-stool-value');
+        const d0CRPValue = document.getElementById('d0-crp-value');
+        const d2CRPValue = document.getElementById('d2-crp-value');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultsSection = document.getElementById('results-section');
+        const riskBanner = document.getElementById('risk-banner');
+        const riskProbabilityEl = document.getElementById('risk-probability');
+        const riskInterpretationEl = document.getElementById('risk-interpretation');
+        const metricsTitle = document.getElementById('metrics-title');
+        
+        // --- Event Listeners ---
+        d2StoolSlider.addEventListener('input', () => { d2StoolValue.textContent = d2StoolSlider.value; });
+        d0CRPSlider.addEventListener('input', () => { d0CRPValue.textContent = d0CRPSlider.value; });
+        d2CRPSlider.addEventListener('input', () => { d2CRPValue.textContent = d2CRPSlider.value; });
+
+        calculateBtn.addEventListener('click', () => {
+            const day2Stool = parseFloat(d2StoolSlider.value);
+            const day0CRP = parseFloat(d0CRPSlider.value);
+            const day2CRP = parseFloat(d2CRPSlider.value);
+            
+            if (day0CRP <= 0) {
+                alert("Day 0 CRP must be greater than zero.");
+                return;
+            }
+
+            const crpRatio = day2CRP / day0CRP;
+            const logOdds = -3.607 + (0.291 * day2Stool) + (0.042 * day2CRP) + (0.240 * crpRatio);
+            const probability = 1 / (1 + Math.exp(-logOdds));
+
+            displayResults(probability);
+        });
+
+        // --- Display Functions ---
+        function displayResults(probability) {
+            const riskThreshold = 0.45;
+            
+            riskProbabilityEl.textContent = `Predicted Risk of Failure: ${(probability * 100).toFixed(1)}%`;
+            
+            if (probability < riskThreshold) {
+                riskBanner.textContent = 'LOW RISK';
+                riskBanner.className = 'risk-banner low-risk';
+                riskInterpretationEl.textContent = "The patient has a low probability of infliximab failure. The model predicts >95% failure-free survival through Day 14.";
+            } else {
+                riskBanner.textContent = 'HIGH RISK';
+                riskBanner.className = 'risk-banner high-risk';
+                riskInterpretationEl.textContent = "The patient has a high probability of infliximab failure. This score should prompt immediate clinical review and further investigation to guide the next therapeutic step.";
+            }
+            
+            displayPerformanceMetrics(probability);
+            
+            resultsSection.style.display = 'block';
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function displayPerformanceMetrics(probability) {
+            const closestMetric = performanceData.reduce((prev, curr) => {
+                return (Math.abs(curr.threshold - probability) < Math.abs(prev.threshold - probability) ? curr : prev);
+            });
+            
+            metricsTitle.textContent = `Performance Metrics at Nearest Threshold (${(closestMetric.threshold * 100).toFixed(1)}%)`;
+            
+            document.getElementById('metric-sensitivity').textContent = (closestMetric.sensitivity * 100).toFixed(0) + '%';
+            document.getElementById('metric-specificity').textContent = (closestMetric.specificity * 100).toFixed(1) + '%';
+            document.getElementById('metric-ppv').textContent = (closestMetric.ppv * 100).toFixed(1) + '%';
+            document.getElementById('metric-npv').textContent = (closestMetric.npv * 100).toFixed(1) + '%';
+        }
+    </script>
+</body>
+</html>
